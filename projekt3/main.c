@@ -1,11 +1,12 @@
-/*Autor: Łukasz Pokorzyński, grupa I3
+/*
+  Autor: Łukasz Pokorzyński, grupa I3
   Program pozwala na tworzenie sekwencji obrazów w formacie PPN i PGN
   Korzysta z pamięci dynamicznej w postaci listy jednokierunkowej.
-  Zawiera obsluge plikow formatu PPM i PGM.*/
+  Zawiera obsluge plikow formatu PPM i PGM.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <string.h>
 #define MAX_NAZWA 51
 
@@ -38,7 +39,7 @@ void usunSekwencje( Sekwencja** glowa );
 void otworzSekwencje( Sekwencja* glowa );
 /*
 void sortujSekwencje( Obraz o[], int numer );
-void dodajObraz( Sekwencja s[], int numerSekwencji, int* numerObrazu );
+void dodajObraz( Obraz** pierwszy );
 void wyswietlObraz( Obraz o[], int licznik );
 void usunObraz( Obraz o[], int* licznik );
 
@@ -210,6 +211,22 @@ void usunSekwencje( Sekwencja** glowa ){
     wyczyscBufor();
 }
 
+void dodajObraz( Obraz** pierwszy ){
+    printf( "Podaj sciezke do pliku PPM/PGM: " );
+    char sciezka[1000];
+    scanf( "%s[^\n]", sciezka );
+    wyczyscBufor();
+    FILE* plik = fopen( sciezka, "r" );
+    if( !plik ){
+        printf( "Otwarcie pliku nie powiodlo sie!\n" );
+        return;
+    }
+    Obraz* temp = *pierwszy;
+
+
+    fclose( plik );
+}
+
 void otworzSekwencje( Sekwencja* glowa ){
     if( glowa == NULL ){
         puts( "Brak sekwencji do otwarcia!" );
@@ -253,7 +270,7 @@ void otworzSekwencje( Sekwencja* glowa ){
         switch( znak ){
             case 'a':
             case 'A':
-                //dodajObraz( s, numer, &(s[numer].iloscObrazow) );
+                dodajObraz( &(temp->pierwszy) );
                 break;
             case 'd':
             case 'D':
@@ -322,36 +339,6 @@ void sortujSekwencje( Obraz o[], int numer ){
     }
 }
 
-void dodajObraz( Sekwencja s[], int numerSekwencji, int* numerObrazu ){
-    strcpy( s[numerSekwencji].obrazy[*numerObrazu].nazwaGlowna, s[numerSekwencji].nazwaSekwencji );
-    printf( "Podaj unikalna nazwe obrazu: " );
-    scanf( "%49[^\n]", s[numerSekwencji].obrazy[*numerObrazu].unikalnaNazwa );
-    printf( "Podaj wysokosc w pikselach: " );
-    scanf( "%d", &s[numerSekwencji].obrazy[*numerObrazu].wysokosc );
-    printf( "Podaj szerokosc w pikselach: " );
-    scanf( "%d", &s[numerSekwencji].obrazy[*numerObrazu].szerokosc );
-    printf( "Podaj kolor dominujacy w formacie [R,G,B] (wartosci wpisuj po kolei):\n" );
-    for(int i = 0; i < 3; ++i){
-        scanf( "%d", &s[numerSekwencji].obrazy[*numerObrazu].kolorDominujacy[i] );
-        while( s[numerSekwencji].obrazy[*numerObrazu].kolorDominujacy[i] < 0 || s[numerSekwencji].obrazy[*numerObrazu].kolorDominujacy[i] > 255 ){
-            printf( "Nieprawidlowa wartosc koloru! Podaj wartosc w przedziale <0, 255>: " );
-            scanf( "%d", &s[numerSekwencji].obrazy[*numerObrazu].kolorDominujacy[i] );
-        }
-    }
-    printf( "Podaj ilosc kanalow obrazu (1, 3 lub 4): ");
-    scanf( "%d", &s[numerSekwencji].obrazy[*numerObrazu].kanaly );
-    while( s[numerSekwencji].obrazy[*numerObrazu].kanaly != 1 && s[numerSekwencji].obrazy[*numerObrazu].kanaly != 3 && s[numerSekwencji].obrazy[*numerObrazu].kanaly != 4 ){
-        printf( "Nieprawidlowy numer kanalu! Podaj jeden z dostepnych (1, 3, 4): " );
-        scanf( "%d", &s[numerSekwencji].obrazy[*numerObrazu].kanaly );
-    }
-    wyczyscBufor();
-    stworzHistogram( &s[numerSekwencji].obrazy[*numerObrazu] );
-    ++( *numerObrazu );
-    s[numerSekwencji].obrazy[*numerObrazu-1].pozycja = *numerObrazu;
-
-    printf( "Utworzono obraz \"%s\" na pozycji %d!\n", s[numerSekwencji].obrazy[*numerObrazu-1].unikalnaNazwa, *numerObrazu );
-}
-
 void usunObraz( Obraz o[], int* licznik ){
     if( licznik == 0 ){
         puts( "Sekwencja jest pusta!" );
@@ -375,13 +362,14 @@ void usunObraz( Obraz o[], int* licznik ){
     --( *licznik );
 }
 
-void wyswietlObraz( Obraz o[], int licznik ){
-    if(licznik == 0){
+void wyswietlObraz( Obraz* pierwszy ){
+    if( !pierwszy ){
         printf( "Brak obrazow do pokazania!\n" );
         return;
     }
 
     int numer;
+    Obraz* temp = pierwszy;
     printf( "Wpisz nr obrazu do wyswietlenia sposrod dostepnych: " );
     scanf( "%d", &numer );
     if(numer > licznik || numer < 1){
@@ -389,8 +377,7 @@ void wyswietlObraz( Obraz o[], int licznik ){
         wyczyscBufor();
         return;
     }
-    numer = numer - 1;
-    printf( "Unikalna nazwa obrazu: %s\n", o[numer].unikalnaNazwa );
+    printf( "Unikalna nazwa obrazu: %s\n", temp->unikalnaNazwa );
     printf( "Pozycja: %d\n", o[numer].pozycja );
     printf( "Wysokosc: %d\nSzerokosc: %d\n", o[numer].wysokosc, o[numer].szerokosc );
     printf( "Kolor dominujacy[R G B]:\n" );
